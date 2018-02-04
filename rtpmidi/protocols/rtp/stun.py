@@ -12,8 +12,8 @@ from twisted.python import log
 
 import sets
 
-from defcache import DeferredCache
-from nat import BaseMapper
+from .defcache import DeferredCache
+from .nat import BaseMapper
 
 STUNVERBOSE = False
 # If we're going to follow RFC recommendation, make this 7
@@ -78,7 +78,7 @@ CHANGE_PORT = struct.pack('!i',2)
 CHANGE_IP = struct.pack('!i',4)
 CHANGE_BOTH = struct.pack('!i',6)
 
-for k,v in StunTypes.items():
+for k,v in list(StunTypes.items()):
     StunTypes[v] = k
 del k, v
 
@@ -156,7 +156,7 @@ def _parseStunResponse(dgram, address, expectedTID=None, oldtids=[]):
                 dummy,family,port,addr = struct.unpack('!ccH4s', val)
                 addr = socket.inet_ntoa(addr)
                 if STUNVERBOSE:
-                    print avtype, addr, port
+                    print((avtype, addr, port))
                 if avtype == 'MAPPED-ADDRESS':
                     resdict['externalAddress'] = (addr, port)
                 elif avtype == 'CHANGED-ADDRESS':
@@ -189,11 +189,11 @@ class  _StunBase(object):
             avstr = avstr + struct.pack('!hh', StunTypes[a], len(v)) + v
         pktlen = len(avstr)
         if pktlen > 65535:
-            raise ValueError, "stun request too big (%d bytes)"%pktlen
+            raise ValueError("stun request too big (%d bytes)"%pktlen)
         pkt = struct.pack('!hh16s', mt, pktlen, tid) + avstr
         if STUNVERBOSE:
-            print "sending request %r with %d avpairs to %r (in state %s)"%(
-                            hexify(tid), len(avpairs), server, self._stunState)
+            print(("sending request %r with %d avpairs to %r (in state %s)"%(
+                            hexify(tid), len(avpairs), server, self._stunState)))
         self.transport.write(pkt, server)
 
 class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
@@ -233,11 +233,11 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
             self.sendRequest(address, tid=tid)
         else:
             if STUNVERBOSE:
-                print "giving up on %r"%(address,)
+                print(("giving up on %r"%(address,)))
             del self._potentialStuns[tid]
             if not self._potentialStuns:
                 if STUNVERBOSE:
-                    print "stun state 1 timeout - no internet UDP possible"
+                    print("stun state 1 timeout - no internet UDP possible")
                 self.natType = NatTypeUDPBlocked
                 self._finishedStun()
 
@@ -254,7 +254,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
             if self._stunState == '1':
                 # We got a (potentially) working STUN server!
                 # Cancel the retransmit timers for the other ones
-                for k in self._potentialStuns.keys():
+                for k in list(self._potentialStuns.keys()):
                     self._potentialStuns[k].cancel()
                     self._potentialStuns[k] = None
                 resdict = _parseStunResponse(dgram, address, self.expectedTID,
@@ -270,7 +270,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
                                                 self.oldTIDs)
         if not resdict:
             return
-        if STUNVERBOSE: print 'calling handleStunState%s'%(self._stunState)
+        if STUNVERBOSE: print(('calling handleStunState%s'%(self._stunState)))
         getattr(self, 'handleStunState%s'%(self._stunState))(resdict, address)
 
     def handleStunState1(self, resdict, address):
@@ -293,7 +293,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
         self.state2DelayedCall.cancel()
         del self.state2DelayedCall
         if STUNVERBOSE:
-            print "2a", resdict
+            print(("2a", resdict))
         self.natType = NatTypeNone
         self._finishedStun()
 
@@ -301,7 +301,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
         self.state2DelayedCall.cancel()
         del self.state2DelayedCall
         if STUNVERBOSE:
-            print "2b", resdict
+            print(("2b", resdict))
         self.natType = NatTypeFullCone
         self._finishedStun()
 
@@ -330,7 +330,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
         self.state3DelayedCall.cancel()
         del self.state3DelayedCall
         if STUNVERBOSE:
-            print "3", resdict
+            print(("3", resdict))
         if self.externalAddress == resdict['externalAddress']:
             # State 4! wheee!
             self._stunState = '4'
@@ -387,7 +387,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
     def finishedStun(self):
         # Override in a subclass
         if STUNVERBOSE:
-            print "firewall type is", self.natType
+            print(("firewall type is", self.natType))
 
     def startDiscovery(self):
         from shtoom.nat import isBogusAddress, getLocalIPAddress
@@ -443,23 +443,23 @@ class StunHook(_StunBase):
             self.sendRequest(address, tid=tid)
         else:
             if STUNVERBOSE:
-                print "giving up on %r"%(address,)
+                print(("giving up on %r"%(address,)))
             del self._potentialStuns[tid]
             if not self._potentialStuns:
                 if STUNVERBOSE:
-                    print "stun state 1 timeout - no internet UDP possible"
+                    print("stun state 1 timeout - no internet UDP possible")
                 self.natType = NatTypeUDPBlocked
                 self.finishedStun()
 
     def datagramReceived(self, dgram, address):
         if STUNVERBOSE:
-            print "hook got a datagram from", address
+            print(("hook got a datagram from", address))
         if self.deferred is None:
             # We're already done
             return
 
         mt, pktlen, tid = struct.unpack('!hh16s', dgram[:20])
-        if self._pending.has_key(tid):
+        if tid in self._pending:
             delayed = self._pending[tid]
             if delayed is not None:
                 delayed.cancel()
@@ -473,7 +473,7 @@ class StunHook(_StunBase):
             # Got a valid response. Clean up around here first.
             self.uninstallStun()
             # kill any pending retransmits
-            for delayed in self._pending.values():
+            for delayed in list(self._pending.values()):
                 if delayed is not None:
                     delayed.cancel()
             # send response
@@ -592,12 +592,12 @@ if __name__ == "__main__":
     class TestStunDiscoveryProtocol(StunDiscoveryProtocol):
 
         def finishedStun(self):
-            print "STUN finished, results:"
-            print "You're behind a %r"%(self.natType)
+            print("STUN finished, results:")
+            print(("You're behind a %r"%(self.natType)))
             if self.natType is NatTypeSymmetric:
-                print "You're going to have to use an outbound proxy"
+                print("You're going to have to use an outbound proxy")
             else:
-                print "and external address is %r"%(self.externalAddress,)
+                print(("and external address is %r"%(self.externalAddress,)))
             reactor.stop()
 
 

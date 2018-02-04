@@ -19,7 +19,7 @@ def parse_generic(obj, k, text):
     obj._d.setdefault(k, []).append(text)
 
 def unparse_generic(obj, k):
-    if obj._d.has_key(k):
+    if k in obj._d:
         return obj._d[k]
     else:
         return []
@@ -28,7 +28,7 @@ def parse_singleton(obj, k, text):
     obj._d[k] = text
 
 def unparse_singleton(obj, k):
-    if obj._d.has_key(k):
+    if k in obj._d:
         return [obj._d[k]]
     else:
         return []
@@ -71,9 +71,9 @@ def parse_a(obj, a, text):
 
 def unparse_a(obj, k):
     out = []
-    for (a,vs) in obj._a.items():
+    for (a,vs) in list(obj._a.items()):
         if isinstance(vs, OrderedDict):
-            vs = vs.values()
+            vs = list(vs.values())
         for v in vs:
             if v:
                 out.append('%s:%s' % (a, v))
@@ -192,7 +192,7 @@ class MediaDescription:
 
     def addRtpMap(self, fmt):
         if fmt.pt is None:
-            pts = self.rtpmap.keys()
+            pts = list(self.rtpmap.keys())
             pts.sort()
             if pts and pts[-1] > 100:
                 payload = pts[-1] + 1
@@ -217,18 +217,18 @@ class MediaDescription:
         # See RFC 3264
         map1 = self.rtpmap
         d1 = {}
-        for code,(e,fmt) in map1.items():
+        for code,(e,fmt) in list(map1.items()):
             d1[rtpmap2canonical(code,e)] = e
         map2 = other.rtpmap
         outmap = OrderedDict()
         # XXX quadratic - make rtpmap an ordereddict
-        for code, (e, fmt) in map2.items():
+        for code, (e, fmt) in list(map2.items()):
             canon = rtpmap2canonical(code,e)
-            if d1.has_key(canon):
+            if canon in d1:
                 outmap[code] = (e, fmt)
         self.rtpmap = outmap
-        self.formats = [ str(x) for x in self.rtpmap.keys() ]
-        self._a['rtpmap'] = OrderedDict([ (code,e) for (code, (e, fmt)) in outmap.items() ])
+        self.formats = [ str(x) for x in list(self.rtpmap.keys()) ]
+        self._a['rtpmap'] = OrderedDict([ (code,e) for (code, (e, fmt)) in list(outmap.items()) ])
 
 class SDP:
     def __init__(self, text=None):
@@ -288,7 +288,7 @@ class SDP:
         elif typechar is 'a':
             return getA(self, option)
         else:
-            raise ValueError, "only know about suboptions for 'a' so far"
+            raise ValueError("only know about suboptions for 'a' so far")
 
     def setServerIP(self, l):
         self._o_ipaddr = self.ipaddr = l
@@ -384,7 +384,7 @@ if __name__ == "__main__":
     tmp_sdp.parse(res)
     app_conf = tmp_sdp.getMediaDescription("audio").rtpmap
 
-    print app_conf.items()[0][1][0]
+    print((list(app_conf.items())[0][1][0]))
 
     #Compare
     ss = SDP()

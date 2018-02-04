@@ -28,9 +28,9 @@ from rtpmidi.protocols.rtp.jitter_buffer import JitterBuffer
 from struct import unpack
 
 #Constants
-TWO_TO_THE_16TH = 2L<<16
-TWO_TO_THE_32ND = 2L<<32
-TWO_TO_THE_48TH = 2L<<48
+TWO_TO_THE_16TH = 2<<16
+TWO_TO_THE_32ND = 2<<32
+TWO_TO_THE_48TH = 2<<48
 CHECK_FREQ = 50
 MAX_LOST_RATE = 30
 MIN_JITTER_BUFFER_TIME = 10
@@ -70,7 +70,7 @@ class RTPProtocol(DatagramProtocol):
         self.ts = self.genInitTS()
         self.ssrc = self.genSSRC()
         if VERBOSE:
-            print "  SSRC: " + str(self.ssrc)
+            print("  SSRC: " + str(self.ssrc))
         #To check Silent
         self._silent = True
         # only for debugging -- the way to prevent the sending of RTP packets
@@ -110,13 +110,13 @@ class RTPProtocol(DatagramProtocol):
         if sport != 0:
             if VERBOSE:
                 if sport != rtp_port :
-                    print "Warning: Selected sending port could not be used, another one has been selected"
-                print "  Sending port:", rtp_port
+                    print("Warning: Selected sending port could not be used, another one has been selected")
+                print("  Sending port:", rtp_port)
         if rport != 0:
             if VERBOSE:
                 if rport != rtp_port :
-                    print "Warning: Selected receiving port could not be used, another one has been selected"
-                print "  Receiving port:", rtp_port
+                    print("Warning: Selected receiving port could not be used, another one has been selected")
+                print("  Receiving port:", rtp_port)
         self.lastreceivetime = time()
         self.init_time = time()*1000
         return d
@@ -193,17 +193,17 @@ class RTPProtocol(DatagramProtocol):
             complete.
         '''
         if VERBOSE:
-            print "Nat mapping ..."
+            print("Nat mapping ...")
         # See above comment about port translation.
         # We have to do STUN for both RTP and RTCP, and hope we get a sane
         # answer.
-        from nat import getMapper
+        from .nat import getMapper
         d = getMapper()
         d.addCallback(self._cb_gotMapper)
         return d
 
     def unmapRTP(self):
-        from nat import getMapper
+        from .nat import getMapper
         if self.needSTUN is False:
             return defer.succeed(None)
         # Currently removing an already-fired trigger doesn't hurt,
@@ -248,7 +248,7 @@ class RTPProtocol(DatagramProtocol):
             code1, rtp = rtpres
             code2, rtcp = rtcpres
             if rtp[0] != rtcp[0]:
-                print "stun gave different IPs for rtp and rtcp", results
+                print("stun gave different IPs for rtp and rtcp", results)
             # We _should_ try and see if we have working rtp and rtcp, but
             # this seems almost impossible with most firewalls. So just try
             # to get a working rtp port (an even port number is required).
@@ -259,8 +259,8 @@ class RTPProtocol(DatagramProtocol):
                 # XXX close connection, try again, tell user
                 if self._stunAttempts > 8:
                     # XXX
-                    print "Giving up. Made %d attempts to get a working port" \
-                        % (self._stunAttempts)
+                    print("Giving up. Made %d attempts to get a working port" \
+                        % (self._stunAttempts))
                 self._stunAttempts += 1
                 defer.maybeDeferred(
                             self.rtpListener.stopListening).addCallback( \
@@ -279,8 +279,8 @@ class RTPProtocol(DatagramProtocol):
 
     def connectionRefused(self):
         if VERBOSE:
-            print "RTP got a connection refused, continuing anyway",
-            print " (May be remote has close his connection...)"
+            print("RTP got a connection refused, continuing anyway", end=' ')
+            print(" (May be remote has close his connection...)")
         self.Done = True
         self.app.drop_call(self.cookie)
 
@@ -313,8 +313,8 @@ class RTPProtocol(DatagramProtocol):
         packet = RTPPacket(self.ssrc, self.seq, self.ts, data, pt=pt,
                            marker=marker, xhdrtype=xhdrtype, xhdrdata=xhdrdata)
         self.seq += 1
-	rtp, session = self.app.currentRecordings[self.cookie]
-	session.seq = self.seq
+        rtp, session = self.app.currentRecordings[self.cookie]
+        session.seq = self.seq
         # Note that seqno gets modulo 2^16 in RTPPacket, so it doesn't need
         # to be wrapped at 16 bits here.
         if self.seq >= 65536:
@@ -329,11 +329,11 @@ class RTPProtocol(DatagramProtocol):
                     dest = (self.RTCP.members_table[ssrc]['addr'],
                             self.RTCP.members_table[ssrc]['rtcp_port']-1)
                     if DEBUG:
-                        print "send RTP to " + str(dest)
+                        print("send RTP to " + str(dest))
                     self.transport.write(bytes, dest)
-                except MessageLengthError, e:
-                    print "Cannot write on socket ! Exception e (member: " \
-                        + str(self.RTCP.members_table[ssrc])
+                except MessageLengthError as e:
+                    print("Cannot write on socket ! Exception e (member: " \
+                        + str(self.RTCP.members_table[ssrc]))
                 self.last_sent_time = time()
 
     def _send_cn_packet(self, logit=False, recovery=0):
@@ -343,8 +343,8 @@ class RTPProtocol(DatagramProtocol):
             % (self,)
         if logit:
             if VERBOSE:
-                print
-                print "Sending CN(%s) to seed firewall to %s:%d" % (self.payload, self.dest[0], self.dest[1])
+                print()
+                print("Sending CN(%s) to seed firewall to %s:%d" % (self.payload, self.dest[0], self.dest[1]))
         self._send_packet(self.payload, chr(127))
 
     def start(self, dest, fp=None):
@@ -407,7 +407,7 @@ class RTPProtocol(DatagramProtocol):
                                     + str(self.RTCP.members_table[ssrc]['lost']) + ")"
                                 line += " for client " \
                                     + str(self.RTCP.members_table[ssrc]['addr'])
-                                print line
+                                print(line)
                             #Call app with recovery journal
                             self.app.incoming_rtp(self.cookie, packet.header.ts,
                                                   packet, 1)
@@ -419,7 +419,7 @@ class RTPProtocol(DatagramProtocol):
             return
         if not self.checksum(datagram):
             if VERBOSE:
-                print "Warning: Packet received with wrong checksum RTP"
+                print("Warning: Packet received with wrong checksum RTP")
             return
         #parse the packet
         packet = parse_rtppacket(datagram)
@@ -431,7 +431,7 @@ class RTPProtocol(DatagramProtocol):
             cname = ""
         if not self.RTCP.check_ssrc(ssrc, addr, "DATA", cname):
             if VERBOSE:
-                print "Warning: Bad SSRC leaving packet on the floor"
+                print("Warning: Bad SSRC leaving packet on the floor")
             return
         else:
             #Update last_seq and lastreceivetime
@@ -443,13 +443,13 @@ class RTPProtocol(DatagramProtocol):
                 if packet.data == "p":
                     #Silent without recovery
                     if DEBUG :
-                        print "silent packet received"
+                        print("silent packet received")
                     #self.RTCP.members_table[ssrc]['last_seq'] += 1
                     return
                 #Testing payload type TODO erase this test
                 if packet.header.pt == self.payload:
                     if DEBUG:
-                        print "payload of packet accepted"
+                        print("payload of packet accepted")
                     #Getting stats
                     last_ts = self.RTCP.members_table[ssrc]['last_ts']
                     last_time = self.RTCP.members_table[ssrc]['last_time']
@@ -474,7 +474,7 @@ class RTPProtocol(DatagramProtocol):
                         self.RTCP.members_table[ssrc]['jitter'] = jitter
                     if self.RTCP.members_table[ssrc]['total_received_packets'] % CHECK_FREQ == 0:
                         if DEBUG:
-                            print "Estimate jitter time"
+                            print("Estimate jitter time")
                         jitter_average = self.RTCP.members_table[ssrc]['jitter_values'].average()
                         total_received = self.RTCP.members_table[ssrc]['total_received_packets']
                         #Lost rate estimation
@@ -484,23 +484,23 @@ class RTPProtocol(DatagramProtocol):
                         if lost_rate > MAX_LOST_RATE :
                             if VERBOSE:
                                 line = "Loosing too much packet !!"
-                                print line
+                                print(line)
                         #Adjusting latency (based on round trip time/jitter)
                         #self.test_jitter()
                         #self.test_delay()
 
                     #Adding packet to the jitter buffer
                     if DEBUG:
-                        print "Adding packet to jitter buffer"
+                        print("Adding packet to jitter buffer")
                     self.jitter_buffer.add([packet, time()*1000])
                 else:
                     if VERBOSE:
-                        print "Incompatible payload type"
+                        print("Incompatible payload type")
             else:
                 #this is the first packet
                 if VERBOSE:
                     line = "First RTP packet received from " + str(addr)
-                    print line
+                    print(line)
                 self.RTCP.members_table[ssrc]['last_seq'] = packet.header.seq
 
 ##
@@ -511,9 +511,9 @@ class RTPProtocol(DatagramProtocol):
         #FIXME: rename for a better name
         try:
             header = unpack('!BBHII', bytes[:12])
-        except struct.error, e:
+        except struct.error as e:
             return False
-        except IndexError, e:
+        except IndexError as e:
             return False
         #(version)
         version = (header[0]>>6)
@@ -624,7 +624,7 @@ class RTPProtocol(DatagramProtocol):
         m.update(str(socket.gethostname()))
         hex = m.hexdigest()
         nums = hex[:8], hex[8:16], hex[16:24], hex[24:]
-        nums = [ long(x, 17) for x in nums ]
+        nums = [ int(x, 17) for x in nums ]
         ssrc = 0
         for n in nums: ssrc = ssrc ^ n
         ssrc = ssrc & (2**32 - 1)
@@ -637,7 +637,7 @@ class RTPProtocol(DatagramProtocol):
         m.update(str(time()))
         hex = m.hexdigest()
         nums = hex[:8], hex[8:16], hex[16:24], hex[24:]
-        nums = [ long(x, 16) for x in nums ]
+        nums = [ int(x, 16) for x in nums ]
         ts = 0
         for n in nums: ts = ts ^ n
         ts = ts & (2**32 - 1)
@@ -669,7 +669,7 @@ class RTPProtocol(DatagramProtocol):
                          " only when it is in sending mode.") % (self,))
 
                 if VERBOSE:
-                    print "WARNING: warnedaboutthis"
+                    print("WARNING: warnedaboutthis")
 
                 self.warnedaboutthis = True
             return

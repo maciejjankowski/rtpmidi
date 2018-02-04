@@ -103,7 +103,7 @@ class SDPGenerator:
     "Responsible for generating SDP for the RTPProtocol"
 
     def getSDP(self, rtp, extrartp=None):
-        from sdp import SDP, MediaDescription
+        from .sdp import SDP, MediaDescription
         if extrartp:
             raise ValueError("can't handle multiple RTP streams in a call yet")
         s = SDP()
@@ -113,7 +113,7 @@ class SDPGenerator:
         s.addMediaDescription(md)
         md.setServerIP(addr[0])
         md.setLocalPort(addr[1])
-        for pt, test in TryCodecs.items():
+        for pt, test in list(TryCodecs.items()):
             if test is not None:
                 md.addRtpMap(pt)
 
@@ -123,7 +123,7 @@ class SDPGenerator:
 
 RTPDict = {}
 all = globals()
-for key,val in all.items():
+for key,val in list(all.items()):
     if isinstance(val, PTMarker):
         # By name
         RTPDict[key] = val

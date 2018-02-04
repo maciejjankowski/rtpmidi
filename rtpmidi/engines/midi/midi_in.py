@@ -84,7 +84,7 @@ class MidiIn(object):
             else:
                 line = "INPUT: you have to set a midi device before start "
                 line += "sending midi data"
-                print line
+                print(line)
                 return False
         else:
             line = "INPUT: already sending midi data"
@@ -159,11 +159,11 @@ class MidiIn(object):
             self.midi_in = pypm.Input(self.midi_device)
             if self.verbose:
                 line = "  Midi device in: " + str(self.get_device_info()[1])
-                print line
+                print(line)
             return True
         else:
-            print "INPUT: Invalid midi device selected"
-            print dev_list
+            print("INPUT: Invalid midi device selected")
+            print(dev_list)
             return False
 
     def _get_input(self):
@@ -174,7 +174,7 @@ class MidiIn(object):
         #Reading Midi Input
         midi_data = self.midi_in.Read(1024)
         if self.verbose:
-            print midi_data
+            print(midi_data)
         if len(midi_data) > 0:
             reactor.callFromThread(self.client.send_midi_data, midi_data, current_time)
 

@@ -123,7 +123,7 @@ class RTCPProtocol(DatagramProtocol):
     def send_report(self):
         """Send report, choosing report type with we_sent var"""
         if DEBUG:
-            print "sending rtcp report"
+            print("sending rtcp report")
 
         #Checking timeouts
         self.check_ssrc_timeout()
@@ -151,8 +151,8 @@ class RTCPProtocol(DatagramProtocol):
         #Sending reports
         if self.initial:
             if DEBUG:
-                print "(initial) to " + str((self.rtp.dest[0],
-                                             self.rtp.dest[1]+1))
+                print(("(initial) to " + str((self.rtp.dest[0],
+                                             self.rtp.dest[1]+1))))
 
             self.transport.write(compound_enc,(self.rtp.dest[0],
                                                self.rtp.dest[1]+1))
@@ -169,26 +169,26 @@ class RTCPProtocol(DatagramProtocol):
             self.send_sr_lc.start(self.transmission_interval, now=False)
 
         if DEBUG:
-            print " RTCP TI " + str(self.transmission_interval)
+            print((" RTCP TI " + str(self.transmission_interval)))
 
     def datagramReceived(self, datagram, addr):
         if DEBUG:
-            print "received RTCP packet from " + str(addr)
+            print(("received RTCP packet from " + str(addr)))
 
         if self.initial:
             self.initial = False
             if DEBUG:
-                print "Members=>"
-                print self.members_table
-                print
+                print("Members=>")
+                print((self.members_table))
+                print()
 
         if not self.checksum(datagram):
             if DEBUG:
-                print "Wrong rtcp checksum"
+                print("Wrong rtcp checksum")
             return
 
         if DEBUG:
-            print "good rtcp checksum"
+            print("good rtcp checksum")
 
         #Decoding packet(s)
         packets = RTCPCompound(datagram)
@@ -245,7 +245,7 @@ class RTCPProtocol(DatagramProtocol):
                 if VERBOSE:
                     line = "RTCP packet with unknown type received " \
                         + str(packet_type)
-                    print line
+                    print(line)
 
         #avg size
         self.avg_rtcp_size \
@@ -253,7 +253,7 @@ class RTCPProtocol(DatagramProtocol):
             * self.avg_rtcp_size
 
         if DEBUG:
-            print "avg rtcp size " + str(self.avg_rtcp_size)
+            print(("avg rtcp size " + str(self.avg_rtcp_size)))
 
 
     def checksum(self, bytes):
@@ -282,8 +282,8 @@ class RTCPProtocol(DatagramProtocol):
        try:
            length, = struct.unpack('!H', bytes[2:4])
        except struct.error:
-           print "RTCP: struct.unpack got bad number of bytes"
-           print "RTCP: incorrect checksum!!"
+           print("RTCP: struct.unpack got bad number of bytes")
+           print("RTCP: incorrect checksum!!")
            return
 
 
@@ -337,7 +337,7 @@ class RTCPProtocol(DatagramProtocol):
         """Sending a BYE packet to inform others participant that we are
         leaving the session
         """
-        ssrcs = self.members_table.keys()
+        ssrcs = list(self.members_table.keys())
         arg_list = ([self.rtp.ssrc], reason)
 
         rtcp = RTCPPacket("BYE", ptcode=203, contents=arg_list)
@@ -364,8 +364,8 @@ class RTCPProtocol(DatagramProtocol):
             if ((ssrc != self.rtp.ssrc)
                 and (self.members_table[ssrc]['rtcp_port'] != 0)):
                 if DEBUG:
-                    print "sending RTCP to ", \
-                        str(self.members_table[ssrc]['addr'])
+                    print(("sending RTCP to ", \
+                        str(self.members_table[ssrc]['addr'])))
 
                 self.transport.write(packet,
                                      (self.members_table[ssrc]['addr'],
@@ -423,7 +423,7 @@ class RTCPProtocol(DatagramProtocol):
                     self.members_table[ssrc]['rt_time'] = rt_time
 
                     if DEBUG:
-                        print "RT time calc ", rt_time
+                        print(("RT time calc ", rt_time))
 
 
     def receiveSDES(self, cont):
@@ -454,7 +454,7 @@ class RTCPProtocol(DatagramProtocol):
                 line = "A member (" + str(self.members_table[ssrc]['addr'])
                 line +=  ") is going away from the session ,\n  "
                 line += "reason : " + str(cont[1])
-                print line
+                print(line)
 
             del self.members_table[ssrc]
 
@@ -465,7 +465,7 @@ class RTCPProtocol(DatagramProtocol):
                 del self.senders_table[ssrc]
 
             if DEBUG:
-                print "members table " + str(self.members_table)
+                print(("members table " + str(self.members_table)))
 
         #Reverse consideration
         if self.members <= self.pmembers:
@@ -516,15 +516,15 @@ class RTCPProtocol(DatagramProtocol):
             self.members_table[ssrc] = new_member
             self.members += 1
             if DEBUG:
-                print "new number of member " , len(self.members_table)
-                print "add memebr. res member table : ", \
-                    ssrc, " (ip:", ip_addr, ")"
+                print(("new number of member " , len(self.members_table)))
+                print(("add memebr. res member table : ", \
+                    ssrc, " (ip:", ip_addr, ")"))
 
 
             #log it
             if VERBOSE:
                 line = "New member for the session : " + str(ip_addr)
-                print line
+                print(line)
 
             if ptype == "SR":
                 if not ssrc in self.senders_table:
@@ -535,7 +535,7 @@ class RTCPProtocol(DatagramProtocol):
                     #log it
                     if VERBOSE:
                         line = "New sender for the session : " + str(ip_addr)
-                        print line
+                        print(line)
 
             return 1
 
@@ -557,7 +557,7 @@ class RTCPProtocol(DatagramProtocol):
             #log it
             if VERBOSE:
                 line = "Confirm member for the session : " + str(ip_addr)
-                print line
+                print(line)
 
             return 1
 
@@ -588,7 +588,7 @@ class RTCPProtocol(DatagramProtocol):
                     #containing a CNAME item or CNAME is the
                     #participant's own
                     if VERBOSE:
-                        print "Own loop traffic detected"
+                        print("Own loop traffic detected")
 
                 #mark current time
                 self.conflicting_add[ip_addr]['time'] = time()
@@ -600,7 +600,7 @@ class RTCPProtocol(DatagramProtocol):
                 #SSRC collision detected
                 #log it
                 if VERBOSE:
-                    print "SSRC collision detected"
+                    print("SSRC collision detected")
 
                 #Adding to conflict table and mark time
                 conflict = self.conflict.copy()
@@ -646,7 +646,7 @@ class RTCPProtocol(DatagramProtocol):
                     if VERBOSE:
                         line = "Timing out ssrc for member "
                         line += str(self.members_table[member]['addr'])
-                        print line
+                        print(line)
 
                     del self.members_table[member]
                     self.members -= 1
@@ -666,7 +666,7 @@ class RTCPProtocol(DatagramProtocol):
                 self.we_sent = False
 
                 if DEBUG:
-                    print "timing out we_sent"
+                    print("timing out we_sent")
 
                 #Updating senders table
                 #del self.senders_table[self.rtp.ssrc]
@@ -724,8 +724,8 @@ class RTCPProtocol(DatagramProtocol):
 
         #Calculate transmission intervall
         if DEBUG:
-            print "Transmission intervall calculated => " \
-                + str(self.transmission_interval) + " second(s)"
+            print(("Transmission intervall calculated => " \
+                + str(self.transmission_interval) + " second(s)"))
 
 
 

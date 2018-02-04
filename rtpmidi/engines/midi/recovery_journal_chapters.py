@@ -531,8 +531,8 @@ class ChapterN(Chapter):
 
         second = low | high
         if first > 255 or first < 0:
-            print " problem with first " + str(first) + " length: " \
-                + str(length)
+            print(" problem with first " + str(first) + " length: " \
+                + str(length))
         return pack('!BB', first, second)
 
     def parse_header(self, header):
@@ -660,7 +660,7 @@ class ChapterN(Chapter):
         chapter_note_on = ""
         chapter_note_off = ""
         note_off_presence = 0
-	self.eval_low_high()
+        self.eval_low_high()
 
             #Note off part
         if len(self.note_off) > 0:
@@ -692,7 +692,7 @@ class ChapterN(Chapter):
         nb_note_on = header[1]
         size += 2 * nb_note_on
 
-	#print "total len ???? ", str(2+2*nb_note_on+)
+    #print "total len ???? ", str(2+2*nb_note_on+)
         #len in header of the chapter
         real_len = nb_note_on * 2 + ( header[3] - header[2] + 1 )
 

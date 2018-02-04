@@ -14,8 +14,8 @@ class RTPPacket:
             int >= 0 and < 2**16 and xhdrdata is required to be
             a string whose length is a multiple of 4.
             """
-            assert isinstance(ts, (int, long,)), "ts: %s :: %s" % (ts, type(ts))
-            assert isinstance(ssrc, (int, long,))
+            assert isinstance(ts, int), "ts: %s :: %s" % (ts, type(ts))
+            assert isinstance(ssrc, int)
             assert xhdrtype is None or isinstance(xhdrtype, int) \
                     and xhdrtype >= 0 and xhdrtype < 2**16
             # Sorry, RFC standard specifies that len is in 4-byte words,
@@ -23,7 +23,7 @@ class RTPPacket:
             assert xhdrtype is None or (isinstance(xhdrdata, str) and \
                     len(xhdrdata) % 4 == 0), \
                     "xhdrtype: %s, len(xhdrdata): %s, xhdrdata: %s" % (
-                    xhdrtype, len(xhdrdata), `xhdrdata`,)
+                    xhdrtype, len(xhdrdata), repr(xhdrdata),)
 
             (self.ssrc, self.pt, self.ct, self.seq, self.ts,
                  self.marker, self.xhdrtype, self.xhdrdata) = (
@@ -147,7 +147,7 @@ class NTE:
         elif key == 'flash':
             self._payKey = chr(16)
         else:
-            raise ValueError, "%s is not a valid NTE"%(key)
+            raise ValueError("%s is not a valid NTE"%(key))
 
     def getKey(self):
         return self.key
@@ -189,7 +189,7 @@ RTCP_PT_APP = 204
 rtcpPTdict = {RTCP_PT_SR: 'SR', RTCP_PT_RR: 'RR', RTCP_PT_SDES:'SDES', \
                   RTCP_PT_BYE:'BYE'}
 
-for k,v in rtcpPTdict.items():
+for k,v in list(rtcpPTdict.items()):
     rtcpPTdict[v] = k
 
 RTCP_SDES_CNAME = 1
@@ -213,7 +213,7 @@ rtcpSDESdict = {RTCP_SDES_CNAME: 'CNAME',
                 RTCP_SDES_PRIV: 'PRIV',
                }
 
-for k,v in rtcpSDESdict.items():
+for k,v in list(rtcpSDESdict.items()):
     rtcpSDESdict[v] = k
 
 def hexrepr(bytes):
@@ -396,7 +396,7 @@ class RTCPPacket:
         ssrc, = struct.unpack('!I', self._body[:4])
         bits = struct.unpack('!IIIII', self._body[4:24])
         names = 'ntpHi', 'ntpLo', 'rtpTS', 'packets', 'octets'
-        sender = dict(zip(names, bits))
+        sender = dict(list(zip(names, bits)))
 
         #ntpTS care
         sender['ntpTS'] = sender['ntpHi'] + sender['ntpLo'] * ( 10 ** -9)
@@ -587,7 +587,7 @@ class RTCPPacket:
         for i in range(self._count):
             bits = struct.unpack('!IIIIII', self._body[:24])
             names = 'ssrc', 'lost', 'highest', 'jitter', 'lsr', 'dlsr'
-            c = dict(zip(names,bits))
+            c = dict(list(zip(names,bits)))
 
             #Take care about lost part
             c['fraclost'] = c['lost'] >> 24
@@ -657,7 +657,7 @@ class RTCPCompound:
             try:
                 length, = struct.unpack('!H', bytes[2:4])
             except struct.error:
-                print "struct.unpack got bad number of bytes"
+                print("struct.unpack got bad number of bytes")
                 return
             offset = 4*(length+1)
             body, bytes = bytes[4:offset], bytes[offset:]

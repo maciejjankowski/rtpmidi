@@ -76,7 +76,7 @@ if __name__ == "__main__":
     e.tt()
     a = TestSingleton(44)
 
-    print e.arg
-    print e.o
-    print a.o
+    print((e.arg))
+    print((e.o))
+    print((a.o))
 

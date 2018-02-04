@@ -88,7 +88,7 @@ class ChannelJournal(object):
 
         #All in 16 bits
         if length > 1023:
-            print "!!! Gerer si lenght of channel > 1024"
+            print("!!! Gerer si lenght of channel > 1024")
             return
 
         first = marker_s | chan_num | marker_h | length
@@ -142,7 +142,7 @@ class ChannelJournal(object):
 
         zap = 0
 
-        seq_nums = data.keys()
+        seq_nums = list(data.keys())
 
         for seq in seq_nums:
             #for each midicmd get note type
@@ -256,7 +256,7 @@ class ChannelJournal(object):
 
                 #else log unknown notes
                 else:
-                    print "Unrecognize command => " + str(command>>4)
+                    print("Unrecognize command => " + str(command>>4))
 
         #Checking reset all
         #COnfigurable standard take care ????
@@ -363,7 +363,7 @@ class ChannelJournal(object):
             #Dispatch data on all packets of the channel
             #encode it
             #Stock packets
-            print "special consideration"
+            print("special consideration")
 
         else:
             for chapter in self.chapters:
@@ -539,7 +539,7 @@ class RecoveryJournal(object):
         self.act_seq = 0
         self.tot_chan = 0
         self.content = ""
-	self.highest = 0
+        self.highest = 0
         self.follow_standard = standard
 
     def update(self, new_packet):
@@ -553,9 +553,9 @@ class RecoveryJournal(object):
             chan = midi_cmd[j][0][0]&15
 
             #getting seq no list
-            if channels.has_key(chan):
+            if chan in channels:
 
-                if channels[chan].has_key(new_packet.seqNo):
+                if new_packet.seqNo in channels[chan]:
                     channels[chan][new_packet.seqNo].append(midi_cmd[j])
 
                 else:
@@ -572,7 +572,7 @@ class RecoveryJournal(object):
 
         #Comparing new dict with old dict
         for channel in channels:
-            if self.channels.has_key(channel):
+            if channel in self.channels:
                 if len(channels[channel]) > 0:
                     #Updating channel
                     self.channels[channel].update(channels[channel])
@@ -828,9 +828,9 @@ if __name__ == "__main__":
     packy = OldPacket(6, partition_on, 0)
     ref = time.time()*1000
     recovery.update(packy)
-    print "time update chrono ", str( (time.time()*1000 - ref))
+    print("time update chrono ", str( (time.time()*1000 - ref)))
     ref = time.time()*1000
     res = recovery.parse(recovery.content)
-    print "time parse chrono ", str( (time.time()*1000 - ref))
-    print "len cmp// res: ", str(len(res)), " // ref: ", str(len( partition_on))
+    print("time parse chrono ", str( (time.time()*1000 - ref)))
+    print("len cmp// res: ", str(len(res)), " // ref: ", str(len( partition_on)))
 

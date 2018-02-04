@@ -6,7 +6,7 @@ class myFIFO(object):
         self.lock = Lock()
 
     def append(self, x):
-        print "append"
+        print("append")
         #self.lock.acquire()
         self.data.append(x)
         #self.lock.release()
@@ -15,7 +15,7 @@ class myFIFO(object):
         if len(self.data) > 0:
             res = []
             for i in range(len(self.data)):
-                print "get"
+                print("get")
                 #self.lock.acquire()
                 res.append(self.data.pop(0))
                 #self.lock.release()
@@ -89,5 +89,5 @@ if __name__ == "__main__":
     r.put([['ob',1,1],10])
     r.put([['ob',1,1],14])
     r.put([['ob',1,1],12])
-    print r.buffer
+    print(r.buffer)
 

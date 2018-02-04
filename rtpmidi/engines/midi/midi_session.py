@@ -22,12 +22,12 @@
 RTP MIDI session.
 """
 #History Needs
-from midi_object import OldPacket
-from midi_object import MidiCommand
-from list_circ import  PacketCirc
+from .midi_object import OldPacket
+from .midi_object import MidiCommand
+from .list_circ import  PacketCirc
 #rtp import
-from recovery_journal import RecoveryJournal
-from recovery_journal import compare_history_with_recovery
+from .recovery_journal import RecoveryJournal
+from .recovery_journal import compare_history_with_recovery
 from rtpmidi.protocols.rtp.rtp_session import RTPSession
 #twisted import
 from twisted.internet import task
@@ -62,9 +62,9 @@ class MidiSession(RTPSession):
                             jitter_buffer_size, TOOL_NAME)
         self.verbose = verbose
         if verbose:
-            print "Your configuration:"
-            print "  Latency:", latency, "ms"
-            print "  Jitter Buffer Time:", jitter_buffer_size, "ms"
+            print("Your configuration:")
+            print("  Latency:", latency, "ms")
+            print("  Jitter Buffer Time:", jitter_buffer_size, "ms")
         #init midi
         if self.sport > 0:
             self.midi_in = MidiIn(self, verbose)
@@ -80,9 +80,9 @@ class MidiSession(RTPSession):
             self.recovery = 1
             self.recovery_journal_system = RecoveryJournal(follow_standard)
             if verbose:
-                print "  Recovery journal is running"
+                print("  Recovery journal is running")
                 if follow_standard:
-                    print "  Recovery is following standard"
+                    print("  Recovery is following standard")
         self.init_timestamp = None
         #Flag
         self.sending_data = 0
@@ -144,7 +144,7 @@ class MidiSession(RTPSession):
             #Decoding midi commands
             midi_list =  MidiCommand().decode_midi_commands(midi_list, length)
         if DEBUG:
-            print "receiving data", midi_list
+            print("receiving data", midi_list)
             #Saving feed history
             packet_to_save = OldPacket(self.seq, midi_list, 0)
             self.packets_received_list.to_list(packet_to_save)
@@ -153,8 +153,8 @@ class MidiSession(RTPSession):
         if self.recovery:
             if marker_j and read_recovery_journal:
                 if DEBUG:
-                    print "Read recovery journal"
-                    print packet.header.marker
+                    print("Read recovery journal")
+                    print(packet.header.marker)
                 journal = packet.data[length*7+1:]
                 if len(journal)>0:
                     #Parse Recovery journal
@@ -175,7 +175,7 @@ class MidiSession(RTPSession):
                     rem = time()
                 midi_from_history = compare_history_with_recovery(r_journal, midi_cmd_history)
                 if DEBUG:
-                    print "tps for history compare:", str(time() - rem)
+                    print("tps for history compare:", str(time() - rem))
         #Initialize timestamp diff
         if self.init_timestamp is None:
             self.init_timestamp = timestamp
@@ -221,7 +221,7 @@ class MidiSession(RTPSession):
         Sends MIDI data through the RTP session.
         """
         if DEBUG:
-            print "Sending data", data
+            print("Sending data", data)
         #Witness
         self.sending_data = 1
         #midi Cmd List
@@ -272,7 +272,7 @@ class MidiSession(RTPSession):
         Called by RTP when the connection has been dropped.
         """
         #Rename drop connection
-        print "drop connexion for midi session"
+        print("drop connexion for midi session")
 
     def get_devices(self):
         """

@@ -1,10 +1,10 @@
 from struct import pack
 from struct import unpack
 
-TWO_TO_THE_32ND = 2L<<32
+TWO_TO_THE_32ND = 2<<32
 
 class MidiCommand(object):
-	"""
+    """
         Figure 2 shows the format of the MIDI command section.
         rfc 4695
 
@@ -14,127 +14,127 @@ class MidiCommand(object):
         |B|J|Z|P|LEN... |  MIDI list ...                          |
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         """
-	def __init__(self):
-		pass
+    def __init__(self):
+        pass
 
-	def header(self, marker_b, recovery, timestamp, phantom, length):
-		"""Create header for MIDI Command part"""
-		#MIDI PAYLOAD
-		marker_b = 0 << 7
+    def header(self, marker_b, recovery, timestamp, phantom, length):
+        """Create header for MIDI Command part"""
+        #MIDI PAYLOAD
+        marker_b = 0 << 7
 
                 #Recovery Journal 1 if present
-		marker_j = recovery << 6
+        marker_j = recovery << 6
 
                 #if Z = 1 of packet are play with the same timestamp
                 #( no delay between notes => no delta field)
-		marker_z = timestamp << 5
+        marker_z = timestamp << 5
 
                 #Phantom
-		marker_p = phantom << 4
+        marker_p = phantom << 4
 
-		#Check length (max 255)
+        #Check length (max 255)
 
-		first = marker_b | marker_j | marker_z | marker_p | length
-		header = pack('!B',first)
+        first = marker_b | marker_j | marker_z | marker_p | length
+        header = pack('!B',first)
 
-		return header
+        return header
 
-	def parse_header(self, header_to_parse):
-		"""Parsing header for MIDI Command part"""
-		#Heading
-		header = unpack('!B', header_to_parse)
+    def parse_header(self, header_to_parse):
+        """Parsing header for MIDI Command part"""
+        #Heading
+        header = unpack('!B', header_to_parse)
 
                 #Parsing RTP MIDI Header
-		marker_b = (header[0] & 128) and 1 or 0
-		marker_j = (header[0] & 64) and 1 or 0
-		marker_z =  (header[0] & 32) and 1 or 0
-		marker_p =  (header[0] & 16) and 1 or 0
-		length = header[0] & 15
+        marker_b = (header[0] & 128) and 1 or 0
+        marker_j = (header[0] & 64) and 1 or 0
+        marker_z =  (header[0] & 32) and 1 or 0
+        marker_p =  (header[0] & 16) and 1 or 0
+        length = header[0] & 15
 
-		return marker_b, marker_j, marker_z, marker_p, length
+        return marker_b, marker_j, marker_z, marker_p, length
 
 
-	def encode_midi_commands(self, commands):
-		"""Take a list of cmd in argument, and provide a midi command list
-		format for network
+    def encode_midi_commands(self, commands):
+        """Take a list of cmd in argument, and provide a midi command list
+        format for network
 
-		Each element:
-		| EVENT | NOTE | VELOCITY |
+        Each element:
+        | EVENT | NOTE | VELOCITY |
 
-		Notes must be chronologically ordered oldest first
+        Notes must be chronologically ordered oldest first
 
-		+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		|Delta T 4 octets long, 0 octets if Z = 1   |
-		+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		| MIDI Command 0   (3 octets long)          |
-		+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		"""
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |Delta T 4 octets long, 0 octets if Z = 1   |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        | MIDI Command 0   (3 octets long)          |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        """
 
-		if len(commands) > 0:
+        if len(commands) > 0:
                         #Ordering notes
-			#Order history by channels midi command and pitch
-			decorate =  [((x[0][0]&15), (x[0][0]&240), x[0][1], x)
-				     for x in commands]
-			decorate.sort()
-			commands = [x[3] for x in decorate]
-			#commands = bubble_sort(commands,len(commands))
-			notes = ""
-			nb_notes = 0
-			time_calc =  [x[1] for x in commands]
-			time_calc.sort()
-			time_ref = time_calc[0]
+            #Order history by channels midi command and pitch
+            decorate =  [((x[0][0]&15), (x[0][0]&240), x[0][1], x)
+                     for x in commands]
+            decorate.sort()
+            commands = [x[3] for x in decorate]
+            #commands = bubble_sort(commands,len(commands))
+            notes = ""
+            nb_notes = 0
+            time_calc =  [x[1] for x in commands]
+            time_calc.sort()
+            time_ref = time_calc[0]
 
                         #Formating the list
-			for i in range(len(commands)):
+            for i in range(len(commands)):
                                 #recup time
-				timestamp = commands[i][1] - time_ref
+                timestamp = commands[i][1] - time_ref
 
-				if timestamp >= TWO_TO_THE_32ND:
-					timestamp = timestamp - TWO_TO_THE_32ND
+                if timestamp >= TWO_TO_THE_32ND:
+                    timestamp = timestamp - TWO_TO_THE_32ND
 
                                 #print timestamp
-				event = commands[i][0][0]
-				note = commands[i][0][1]
-				velocity = commands[i][0][2]
+                event = commands[i][0][0]
+                note = commands[i][0][1]
+                velocity = commands[i][0][2]
 
-				tmp = pack('!BBB', event , note , velocity)
-				tmp = pack('!I', timestamp) + tmp
+                tmp = pack('!BBB', event , note , velocity)
+                tmp = pack('!I', timestamp) + tmp
 
-				notes += tmp
+                notes += tmp
 
-				nb_notes += 1
+                nb_notes += 1
 
-			return notes, nb_notes
-		else:
-			return "", 0
+            return notes, nb_notes
+        else:
+            return "", 0
 
 
-	def decode_midi_commands(self, bytes, nb_notes):
-		"""decode a note list from bytes formated for network"""
+    def decode_midi_commands(self, bytes, nb_notes):
+        """decode a note list from bytes formated for network"""
                 #iterator
-		j = 0
-		midi_list = []
-		for i in range(nb_notes):
-			cmd = bytes[j:j+7]
+        j = 0
+        midi_list = []
+        for i in range(nb_notes):
+            cmd = bytes[j:j+7]
 
-			timestamp = unpack('!I', cmd[0:4])
-			event, note, velocity = unpack('!BBB', cmd[4:])
-			timestamp = timestamp[0]
+            timestamp = unpack('!I', cmd[0:4])
+            event, note, velocity = unpack('!BBB', cmd[4:])
+            timestamp = timestamp[0]
 
                         #applique modif ts
-			midi_list.append([[event, note, velocity],timestamp])
-			j += 7
+            midi_list.append([[event, note, velocity],timestamp])
+            j += 7
 
-		return midi_list
+        return midi_list
 
 
 class MidiNote(object): #TODO: Maybe we could convert this object to a tuple to improve the performance
 
-	def __init__(self, time, event, note, velocity, what=0):
-		self.time = time
-		self.event = event
-		self.note = note
-		self.velocity = velocity
+    def __init__(self, time, event, note, velocity, what=0):
+        self.time = time
+        self.event = event
+        self.note = note
+        self.velocity = velocity
 
 
 class OldPacket(object):
@@ -176,7 +176,7 @@ class SafeKeyboard(object):
         #getting index of pitch (possibilit de stopper si trouver)
         for i in range(ind, len(midi_list)):
             if (midi_list[i][0][1] == pitch and midi_list[i][0][0]&240 == value
-		and  midi_list[i][0][0]&15 == chan):
+        and  midi_list[i][0][0]&15 == chan):
                 res = i
                 break
 
@@ -191,15 +191,13 @@ class SafeKeyboard(object):
 
 
     def check(self, midi_notes):
-	"""Verify that note off and note on alternate
-	in a safe way (no double note off)
-        """
-
+        """Verify that note off and note on alternate
+        in a safe way (no double note off)"""
         #Checking if notes are playing
         i = 0
         j = 0
         long = len(midi_notes)
-        while j < long:
+        while j < int:
             #Test for note on
             if midi_notes[i][0][0]&240 == 144:
                 #getting channel
@@ -213,7 +211,7 @@ class SafeKeyboard(object):
                     #if the note paire is found after it
                     if ind_to_swap != -1:
                         if (midi_notes[i][1] <= midi_notes[ind_to_swap][1] + 1
-			    and midi_notes[i][1] >= midi_notes[ind_to_swap][1] - 1):
+                        and midi_notes[i][1] >= midi_notes[ind_to_swap][1] - 1):
                             tmp = midi_notes[i]
                             midi_notes[i] = midi_notes[ind_to_swap]
                             midi_notes[ind_to_swap] = tmp
@@ -245,10 +243,7 @@ class SafeKeyboard(object):
                     #if the note paire is found
                     if ind_to_swap != -1:
                         if (midi_notes[i][1] <= midi_notes[ind_to_swap][1] + 1
-			    and midi_notes[i][1] >= midi_notes[ind_to_swap][1] - 1):
-                            tmp = midi_notes[i]
-                            midi_notes[i] = midi_notes[ind_to_swap]
-                            midi_notes[ind_to_swap] = tmp
+                        and midi_notes[ind_to_swap] >= tmp):
                             self.keyboard[chan][midi_notes[i][0][1]] = True
                             i += 1
 

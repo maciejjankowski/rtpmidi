@@ -1,5 +1,5 @@
 
-from __future__ import nested_scopes
+
 
 from twisted.internet import defer
 import sys
@@ -36,7 +36,7 @@ class _DeferredCache:
             arghash = hash(args)
         except TypeError:
             return None
-        kwit = kwargs.items()
+        kwit = list(kwargs.items())
         kwit.sort()
         try:
             kwhash = hash(tuple(kwit))
@@ -57,7 +57,7 @@ class _DeferredCache:
         cacheVal = self._genCache(args, kwargs)
         if cacheVal is None and self.hashableArgs:
             raise TypeError('DeferredCache(%s) arguments must be hashable'%(
-                                self.op.func_name))
+                                self.op.__name__))
 
         opdef = self.cache.get(cacheVal)
         if not opdef:
@@ -87,7 +87,7 @@ def DeferredCache(op=None, hashableArgs=None, inProgressOnly=None):
     def func(*args, **kwargs):
         return c.call(*args, **kwargs)
     if sys.version_info > (2,4):
-        func.func_name = op.func_name
+        func.__name__ = op.__name__
     func.clearCache = c.clearCache
     func.cache_hashableArgs = c.hashableArgs
     func.cache_inProgressOnly = c.inProgressOnly

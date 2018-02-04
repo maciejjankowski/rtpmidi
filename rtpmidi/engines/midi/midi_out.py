@@ -6,7 +6,7 @@ from twisted.internet import reactor
 from rtpmidi.engines.midi.ringBuffer import myRingBuffer
 from rtpmidi.engines.midi.midi_object import SafeKeyboard
 
-import Queue
+import queue
 
 #Utils
 import time
@@ -56,7 +56,7 @@ class MidiOut(object):
 
         #Struct
         #self.midi_cmd_list = myFIFO()
-        self.midi_cmd_list = Queue.Queue(0)
+        self.midi_cmd_list = queue.Queue(0)
         self.playing_buffer = myRingBuffer()
 
         #flag
@@ -77,7 +77,7 @@ class MidiOut(object):
             self.safe_k = 1
 
             if VERBOSE:
-                print "  SafeKeyboard is running for Midi Out"
+                print("  SafeKeyboard is running for Midi Out")
 
 
     def start(self):
@@ -88,13 +88,13 @@ class MidiOut(object):
             self.publish_flag = True
             reactor.callInThread(self.publish_midi_notes)
             if VERBOSE:
-                print "OUTPUT: Start publish notes"
+                print("OUTPUT: Start publish notes")
 
             return 1
 
         else:
             if VERBOSE:
-                print "OUTPUT: Can not start publish without a midi device set"
+                print("OUTPUT: Can not start publish without a midi device set")
 
             return 0
 
@@ -145,12 +145,12 @@ class MidiOut(object):
             self.midi_out = pypm.Output(self.midi_device, 0)
             if VERBOSE:
                 line = "  Midi device out: " + str(self.get_device_info()[1])
-                print line
+                print(line)
             return True
 
         else:
-            print "OUTPUT: Invalid midi device selected"
-            print dev_list
+            print("OUTPUT: Invalid midi device selected")
+            print(dev_list)
         return False
 
 
@@ -208,7 +208,7 @@ class MidiOut(object):
                 line += " notes - late of "
                 calc = ( midi_time - ( self.latency + new_list[0] ))
                 line += str(calc) + " ms"
-                print line
+                print(line)
 
             note_filtered = midi_notes
 
@@ -230,7 +230,7 @@ class MidiOut(object):
                     line += " note(s) skipped, late of: "
                     calc = ( midi_time - ( self.latency + midi_notes[0][1] ))
                     line += str(calc) + " ms"
-                    print line
+                    print(line)
 
         #Playing note on the midi device
         self.midi_out.Write(midi_notes)
@@ -249,9 +249,9 @@ class MidiOut(object):
                 try:
                     cur_data = midi_cmd_list.get_nowait()
                     if VERBOSE:
-                        print cur_data
+                        print(cur_data)
                     self.playing_buffer.put(cur_data)
-                except Queue.Empty:
+                except queue.Empty:
                     break
 
             if self.playing_buffer.len() > 0:

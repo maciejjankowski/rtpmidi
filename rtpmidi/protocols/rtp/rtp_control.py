@@ -25,7 +25,7 @@ class RTPControl(Singleton):
             and hasattr(session, "drop_call")
             and hasattr(session, "start")
             and hasattr(session, "stop"))):
-            raise Exception, "This session type is not supported"
+            raise Exception("This session type is not supported")
             return
 
         #Cookie related to the rtp session
